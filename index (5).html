@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LUMA — Modern Fashion</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0b; --surface: #111114; --surface2: #18181c;
+    --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.13);
+    --text: #f0ede8; --muted: #7a7875;
+    --accent: #c9a96e; --accent2: #e8d5b0; --red: #e05555;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-weight: 300; line-height: 1.6; overflow-x: hidden; cursor: none; }
+
+  .cursor { position: fixed; top: 0; left: 0; z-index: 9999; pointer-events: none; }
+  .cursor-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; transform: translate(-50%,-50%); position: absolute; }
+  .cursor-ring { width: 36px; height: 36px; border: 1px solid rgba(201,169,110,0.4); border-radius: 50%; transform: translate(-50%,-50%); position: absolute; transition: width .3s, height .3s, border-color .3s; }
+  .cursor.hover .cursor-ring { width: 56px; height: 56px; border-color: var(--accent); }
+
+  .wa-float {
+    position: fixed; bottom: 28px; left: 28px; z-index: 500;
+    display: flex; align-items: center; gap: 10px;
+    background: #25D366; color: #fff; padding: 13px 20px 13px 16px;
+    border-radius: 50px; text-decoration: none; font-size: 13px; font-weight: 500;
+    cursor: none; animation: waPulse 3s ease-in-out infinite;
+    transition: transform .2s;
+  }
+  .wa-float:hover { transform: translateY(-2px); animation: none; }
+  .wa-float svg { width: 22px; height: 22px; flex-shrink: 0; }
+  @keyframes waPulse { 0%,100%{box-shadow:0 4px 24px rgba(37,211,102,.35)} 50%{box-shadow:0 4px 36px rgba(37,211,102,.6)} }
+
+  .toast { position: fixed; bottom: 32px; right: 32px; z-index: 999; background: var(--surface2); border: 1px solid var(--border2); padding: 16px 24px; display: flex; align-items: center; gap: 12px; transform: translateY(80px); opacity: 0; transition: transform .4s cubic-bezier(.34,1.56,.64,1), opacity .3s; pointer-events: none; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 24px 48px; background: rgba(10,10,11,.78); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); transition: padding .3s; }
+  nav.scrolled { padding: 14px 48px; }
+  .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; letter-spacing: .18em; color: var(--text); text-decoration: none; }
+  .nav-logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 36px; list-style: none; }
+  .nav-links a { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color .2s; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-actions { display: flex; align-items: center; gap: 20px; }
+  .nav-icon { background: none; border: none; cursor: none; color: var(--muted); transition: color .2s; display: flex; align-items: center; }
+  .nav-icon:hover { color: var(--text); }
+  .nav-icon svg { width: 20px; height: 20px; }
+  .cart-badge { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #000; font-size: 10px; font-weight: 500; margin-left: -6px; margin-top: -12px; }
+
+  .hero { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; position: relative; overflow: hidden; }
+  .hero-left { display: flex; flex-direction: column; justify-content: center; padding: 140px 64px 80px; position: relative; z-index: 2; }
+  .hero-tag { display: inline-flex; align-items: center; gap: 10px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); margin-bottom: 32px; }
+  .hero-tag::before { content: ''; display: block; width: 32px; height: 1px; background: var(--accent); }
+  .hero-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(54px,5.5vw,86px); font-weight: 300; line-height: 1.0; margin-bottom: 28px; }
+  .hero-title em { font-style: italic; color: var(--accent); }
+  .hero-subtitle { font-size: 15px; color: var(--muted); max-width: 340px; margin-bottom: 48px; line-height: 1.8; }
+  .hero-cta { display: flex; align-items: center; gap: 20px; }
+
+  .btn-primary { display: inline-flex; align-items: center; gap: 12px; background: var(--accent); color: #000; padding: 16px 32px; border: none; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; cursor: none; transition: background .2s, transform .2s; }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+  .btn-ghost { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); text-decoration: none; cursor: none; border-bottom: 1px solid var(--border2); padding-bottom: 2px; transition: color .2s, border-color .2s; }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+
+  .hero-right { position: relative; overflow: hidden; }
+  .hero-img { width: 100%; height: 100%; object-fit: cover; display: block; filter: brightness(.75) contrast(1.05); transition: transform 8s ease; }
+  .hero-right:hover .hero-img { transform: scale(1.04); }
+  .hero-img-overlay { position: absolute; inset: 0; background: linear-gradient(to right, var(--bg) 0%, transparent 35%), linear-gradient(to top, var(--bg) 0%, transparent 20%); }
+  .hero-stat { position: absolute; z-index: 3; background: rgba(17,17,20,.88); backdrop-filter: blur(12px); border: 1px solid var(--border2); padding: 16px 20px; animation: float 4s ease-in-out infinite; }
+  .hero-stat:nth-child(2) { top: 22%; left: 5%; animation-delay: 0s; }
+  .hero-stat:nth-child(3) { bottom: 22%; right: 5%; animation-delay: 2s; }
+  .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 28px; color: var(--accent); line-height: 1; }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+  .hero-scroll { position: absolute; bottom: 40px; left: 64px; display: flex; align-items: center; gap: 12px; font-size: 11px; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); }
+  .scroll-line { width: 40px; height: 1px; background: var(--muted); position: relative; overflow: hidden; }
+  .scroll-line::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: var(--accent); animation: scrollLine 2s ease-in-out infinite; }
+  @keyframes scrollLine { 0%{left:-100%} 100%{left:100%} }
+
+  .marquee-wrap { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); overflow: hidden; padding: 14px 0; background: var(--surface); }
+  .marquee-track { display: flex; gap: 48px; animation: marquee 22s linear infinite; width: max-content; }
+  .marquee-track:hover { animation-play-state: paused; }
+  .marquee-item { display: flex; align-items: center; gap: 16px; font-size: 12px; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  .marquee-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+  @keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+  section { padding: 100px 48px; }
+  .section-tag { display: inline-flex; align-items: center; gap: 10px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); margin-bottom: 20px; }
+  .section-tag::before { content:''; display:block; width:24px; height:1px; background:var(--accent); }
+  .section-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(34px,4vw,54px); font-weight: 300; line-height: 1.1; }
+  .section-title em { font-style: italic; color: var(--accent); }
+
+  .products-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 48px; }
+  .products-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; }
+
+  .product-card { background: var(--surface); position: relative; overflow: hidden; cursor: none; }
+  .product-card:hover .product-img img { transform: scale(1.06); }
+  .product-card:hover .product-overlay { opacity: 1; }
+  .product-img { aspect-ratio: 3/4; overflow: hidden; position: relative; }
+  .product-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .7s cubic-bezier(.25,.46,.45,.94); filter: brightness(.85) contrast(1.05); }
+  .product-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.52); opacity: 0; transition: opacity .35s; display: flex; align-items: center; justify-content: center; }
+  .overlay-btn { background: var(--accent); color: #000; padding: 13px 26px; border: none; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; cursor: none; transform: translateY(14px); transition: transform .3s; }
+  .product-card:hover .overlay-btn { transform: translateY(0); }
+  .product-badge { position: absolute; top: 16px; left: 16px; z-index: 2; padding: 5px 10px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+  .badge-new { background: var(--accent); color: #000; }
+  .badge-sale { background: var(--red); color: #fff; }
+  .product-info { padding: 18px 16px 22px; border-top: 1px solid var(--border); }
+  .product-category { font-size: 10px; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .product-name { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 400; margin-bottom: 10px; color: var(--text); }
+  .product-footer { display: flex; align-items: center; justify-content: space-between; }
+  .product-price { font-size: 15px; color: var(--accent); font-weight: 400; }
+  .product-price-old { font-size: 12px; color: var(--muted); text-decoration: line-through; margin-left: 8px; }
+  .product-colors { display: flex; gap: 6px; }
+  .color-dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--border2); }
+
+  .featured-banner { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface); overflow: hidden; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .banner-content { padding: 80px 64px; display: flex; flex-direction: column; justify-content: center; }
+  .banner-visual { position: relative; overflow: hidden; min-height: 420px; }
+  .banner-visual img { width: 100%; height: 100%; object-fit: cover; display: block; filter: brightness(.72) contrast(1.08); transition: transform 8s ease; }
+  .featured-banner:hover .banner-visual img { transform: scale(1.04); }
+  .banner-overlay { position: absolute; inset: 0; background: linear-gradient(to right, var(--surface) 0%, transparent 45%); }
+
+  .testimonials-section { background: var(--surface); }
+  .testimonials-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; margin-top: 56px; }
+  .testimonial-card { background: var(--bg); padding: 40px 32px; border: 1px solid var(--border); }
+  .testimonial-stars { font-size: 14px; color: var(--accent); margin-bottom: 20px; letter-spacing: 2px; }
+  .testimonial-text { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 300; font-style: italic; line-height: 1.7; color: var(--text); margin-bottom: 24px; }
+  .testimonial-author { display: flex; align-items: center; gap: 12px; }
+  .author-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--accent); font-family: 'Cormorant Garamond', serif; }
+  .author-name { font-size: 13px; color: var(--text); }
+  .author-location { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .newsletter-section { background: var(--surface2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); text-align: center; padding: 80px 48px; }
+  .newsletter-input-wrap { display: flex; max-width: 480px; margin: 40px auto 0; }
+  .newsletter-input { flex: 1; padding: 16px 20px; background: var(--bg); border: 1px solid var(--border2); border-right: none; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; }
+  .newsletter-input::placeholder { color: var(--muted); }
+  .newsletter-btn { padding: 16px 28px; background: var(--accent); color: #000; border: none; cursor: none; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; transition: background .2s; }
+  .newsletter-btn:hover { background: var(--accent2); }
+
+  .wa-section { background: var(--bg); padding: 80px 48px; text-align: center; border-bottom: 1px solid var(--border); }
+  .wa-cta-btn { display: inline-flex; align-items: center; gap: 14px; background: #25D366; color: #fff; padding: 18px 40px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; text-decoration: none; cursor: none; margin-top: 32px; border-radius: 2px; transition: background .2s, transform .2s; }
+  .wa-cta-btn:hover { background: #1db954; transform: translateY(-2px); }
+  .wa-cta-btn svg { width: 22px; height: 22px; }
+
+  footer { background: var(--surface); border-top: 1px solid var(--border); padding: 72px 48px 36px; }
+  .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 56px; }
+  .footer-brand-name { font-family: 'Cormorant Garamond', serif; font-size: 30px; font-weight: 300; letter-spacing: .15em; color: var(--text); margin-bottom: 5px; }
+  .footer-brand-name span { color: var(--accent); }
+  .footer-designer { font-size: 12px; color: var(--muted); letter-spacing: .05em; margin-bottom: 16px; }
+  .footer-designer strong { color: var(--accent); font-weight: 400; }
+  .footer-desc { font-size: 13px; color: var(--muted); line-height: 1.8; max-width: 260px; margin-bottom: 28px; }
+  .footer-socials { display: flex; gap: 10px; flex-wrap: wrap; }
+  .social-link { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border: 1px solid var(--border2); border-radius: 8px; text-decoration: none; cursor: none; transition: border-color .2s, transform .2s, background .25s; }
+  .social-link:hover { transform: translateY(-3px); }
+  .social-link svg { width: 19px; height: 19px; fill: var(--muted); transition: fill .2s; }
+  .social-link:hover svg { fill: #fff; }
+  .social-link.tiktok:hover { background: #010101; border-color: #fff; }
+  .social-link.instagram:hover { background: #C13584; border-color: transparent; }
+  .social-link.facebook:hover { background: #1877F2; border-color: transparent; }
+  .social-link.whatsapp:hover { background: #25D366; border-color: transparent; }
+  .footer-col-title { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--text); margin-bottom: 20px; }
+  .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color .2s; }
+  .footer-links a:hover { color: var(--accent); }
+  .footer-divider { height: 1px; background: var(--border); margin-bottom: 28px; }
+  .footer-bottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .footer-copy { font-size: 12px; color: var(--muted); }
+  .footer-copy strong { color: var(--accent); font-weight: 400; }
+  .footer-bottom-links { display: flex; gap: 24px; }
+  .footer-bottom-links a { font-size: 12px; color: var(--muted); text-decoration: none; transition: color .2s; }
+  .footer-bottom-links a:hover { color: var(--text); }
+
+  .fade-up { opacity: 0; transform: translateY(28px); transition: opacity .7s ease, transform .7s ease; }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 960px) {
+    nav { padding: 18px 24px; } .nav-links { display: none; }
+    .hero { grid-template-columns: 1fr; } .hero-right { height: 55vw; }
+    .hero-left { padding: 120px 24px 60px; }
+    section { padding: 60px 24px; }
+    .products-grid { grid-template-columns: 1fr 1fr; }
+    .testimonials-grid { grid-template-columns: 1fr; }
+    .featured-banner { grid-template-columns: 1fr; } .banner-content { padding: 48px 32px; }
+    .footer-top { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 540px) {
+    .products-grid { grid-template-columns: 1fr; }
+    .footer-top { grid-template-columns: 1fr; }
+    body { cursor: auto; } .cursor { display: none; }
+    section { padding: 48px 20px; } nav { padding: 16px 20px; }
+    .hero-left { padding: 110px 20px 50px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"><div class="cursor-dot"></div><div class="cursor-ring"></div></div>
+
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toastText">Added to cart</span></div>
+
+<!-- WhatsApp floating button -->
+<a href="https://wa.me/254700000000?text=Hello%20Dan!%20I%27m%20interested%20in%20your%20LUMA%20collection." class="wa-float" target="_blank" rel="noopener">
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  Chat on WhatsApp
+</a>
+
+<!-- Nav -->
+<nav id="navbar">
+  <a href="#" class="nav-logo">LU<span>M</span>A</a>
+  <ul class="nav-links">
+    <li><a href="#products">Collection</a></li>
+    <li><a href="#featured">Editorial</a></li>
+    <li><a href="#reviews">Reviews</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="nav-icon" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg></button>
+    <button class="nav-icon" aria-label="Cart" onclick="showToast('Cart opened')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <span class="cart-badge">2</span>
+    </button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-tag fade-up">New Collection 2025</div>
+    <h1 class="hero-title fade-up">Wear the <em>Silence</em> of Luxury</h1>
+    <p class="hero-subtitle fade-up">Thoughtfully crafted pieces for the modern wardrobe. Designed for Kenya, made for the world.</p>
+    <div class="hero-cta fade-up">
+      <a href="#products" class="btn-primary">Shop Now <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      <a href="#featured" class="btn-ghost">View Lookbook</a>
+    </div>
+    <div class="hero-scroll"><div class="scroll-line"></div>Scroll to explore</div>
+  </div>
+  <div class="hero-right">
+    <img class="hero-img" src="https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1200&q=80&fit=crop" alt="Fashion model in elegant outfit" loading="eager">
+    <div class="hero-img-overlay"></div>
+    <div class="hero-stat"><div class="stat-num">2.4K+</div><div class="stat-label">Happy Clients</div></div>
+    <div class="hero-stat"><div class="stat-num">98%</div><div class="stat-label">5-Star Reviews</div></div>
+  </div>
+</section>
+
+<!-- Marquee -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span class="marquee-item"><span class="marquee-dot"></span>New Arrivals</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Free Delivery Over KES 5,000</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>M-Pesa Accepted</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Nairobi Same-Day Delivery</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Sustainable Materials</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Handcrafted Quality</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>New Arrivals</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Free Delivery Over KES 5,000</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>M-Pesa Accepted</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Nairobi Same-Day Delivery</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Sustainable Materials</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Handcrafted Quality</span>
+  </div>
+</div>
+
+<!-- Products -->
+<section id="products">
+  <div class="products-header fade-up">
+    <div><div class="section-tag">The Collection</div><h2 class="section-title">Featured <em>Pieces</em></h2></div>
+    <a href="#" class="btn-ghost">View all →</a>
+  </div>
+  <div class="products-grid">
+
+    <div class="product-card fade-up">
+      <div class="product-img">
+        <img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=700&q=80&fit=crop&crop=top" alt="Obsidian Wool Coat" loading="lazy">
+        <span class="product-badge badge-new">New</span>
+        <div class="product-overlay"><button class="overlay-btn" onclick="addToCart('Obsidian Wool Coat')">Add to Cart</button></div>
+      </div>
+      <div class="product-info">
+        <div class="product-category">Outerwear</div>
+        <div class="product-name">Obsidian Wool Coat</div>
+        <div class="product-footer">
+          <div><span class="product-price">KES 37,500</span></div>
+          <div class="product-colors"><div class="color-dot" style="background:#1a1a1a"></div><div class="color-dot" style="background:#4a3728"></div><div class="color-dot" style="background:#c9a96e"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="product-card fade-up">
+      <div class="product-img">
+        <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=700&q=80&fit=crop&crop=top" alt="Midnight Silk Dress" loading="lazy">
+        <span class="product-badge badge-sale">Sale</span>
+        <div class="product-overlay"><button class="overlay-btn" onclick="addToCart('Midnight Silk Dress')">Add to Cart</button></div>
+      </div>
+      <div class="product-info">
+        <div class="product-category">Dresses</div>
+        <div class="product-name">Midnight Silk Dress</div>
+        <div class="product-footer">
+          <div><span class="product-price">KES 25,200</span><span class="product-price-old">KES 33,600</span></div>
+          <div class="product-colors"><div class="color-dot" style="background:#0d0d1a"></div><div class="color-dot" style="background:#2a1a2a"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="product-card fade-up">
+      <div class="product-img">
+        <img src="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=700&q=80&fit=crop" alt="Amber Leather Tote" loading="lazy">
+        <span class="product-badge badge-new">New</span>
+        <div class="product-overlay"><button class="overlay-btn" onclick="addToCart('Amber Leather Tote')">Add to Cart</button></div>
+      </div>
+      <div class="product-info">
+        <div class="product-category">Accessories</div>
+        <div class="product-name">Amber Leather Tote</div>
+        <div class="product-footer">
+          <div><span class="product-price">KES 23,100</span></div>
+          <div class="product-colors"><div class="color-dot" style="background:#c9a96e"></div><div class="color-dot" style="background:#4a3020"></div><div class="color-dot" style="background:#1a1a1a"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="product-card fade-up">
+      <div class="product-img">
+        <img src="https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=700&q=80&fit=crop&crop=top" alt="Ivory Linen Blazer" loading="lazy">
+        <div class="product-overlay"><button class="overlay-btn" onclick="addToCart('Ivory Linen Blazer')">Add to Cart</button></div>
+      </div>
+      <div class="product-info">
+        <div class="product-category">Blazers</div>
+        <div class="product-name">Ivory Linen Blazer</div>
+        <div class="product-footer">
+          <div><span class="product-price">KES 19,800</span></div>
+          <div class="product-colors"><div class="color-dot" style="background:#e8e0d0"></div><div class="color-dot" style="background:#c8b89a"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="product-card fade-up">
+      <div class="product-img">
+        <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=700&q=80&fit=crop" alt="Crimson Runner Sneakers" loading="lazy">
+        <span class="product-badge badge-sale">Sale</span>
+        <div class="product-overlay"><button class="overlay-btn" onclick="addToCart('Crimson Runner Sneakers')">Add to Cart</button></div>
+      </div>
+      <div class="product-info">
+        <div class="product-category">Footwear</div>
+        <div class="product-name">Crimson Runner Sneakers</div>
+        <div class="product-footer">
+          <div><span class="product-price">KES 12,600</span><span class="product-price-old">KES 16,800</span></div>
+          <div class="product-colors"><div class="color-dot" style="background:#c0392b"></div><div class="color-dot" style="background:#1a1a1a"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="product-card fade-up">
+      <div class="product-img">
+        <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=700&q=80&fit=crop" alt="Gold Precision Watch" loading="lazy">
+        <span class="product-badge badge-new">New</span>
+        <div class="product-overlay"><button class="overlay-btn" onclick="addToCart('Gold Precision Watch')">Add to Cart</button></div>
+      </div>
+      <div class="product-info">
+        <div class="product-category">Accessories</div>
+        <div class="product-name">Gold Precision Watch</div>
+        <div class="product-footer">
+          <div><span class="product-price">KES 58,000</span></div>
+          <div class="product-colors"><div class="color-dot" style="background:#c9a96e"></div><div class="color-dot" style="background:#c0c0c0"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Editorial banner -->
+<div id="featured" class="featured-banner fade-up">
+  <div class="banner-content">
+    <div class="section-tag">Editorial</div>
+    <h2 class="section-title" style="margin-bottom:20px">The Art of <em>Restraint</em></h2>
+    <p style="font-size:14px;color:var(--muted);line-height:1.9;max-width:380px;margin-bottom:36px">Our autumn editorial explores the quiet power of considered dressing — pieces that speak without raising their voice. Each garment is a study in purpose.</p>
+    <a href="#" class="btn-primary">Explore Lookbook <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+  </div>
+  <div class="banner-visual">
+    <img src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1000&q=80&fit=crop" alt="Fashion editorial" loading="lazy">
+    <div class="banner-overlay"></div>
+  </div>
+</div>
+
+<!-- Testimonials -->
+<section class="testimonials-section" id="reviews">
+  <div style="text-align:center" class="fade-up">
+    <div class="section-tag" style="justify-content:center">Reviews</div>
+    <h2 class="section-title">What Clients <em>Say</em></h2>
+  </div>
+  <div class="testimonials-grid">
+    <div class="testimonial-card fade-up">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-text">"The quality is unlike anything I've found at this price point. The coat arrived perfectly packaged and fits like it was made for me."</p>
+      <div class="testimonial-author"><div class="author-avatar">A</div><div><div class="author-name">Amara K.</div><div class="author-location">Nairobi, Kenya</div></div></div>
+    </div>
+    <div class="testimonial-card fade-up">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-text">"I've been shopping with LUMA for two seasons now. Every piece I own has lasted beautifully. This is what slow fashion should look like."</p>
+      <div class="testimonial-author"><div class="author-avatar">S</div><div><div class="author-name">Sofia M.</div><div class="author-location">Mombasa, Kenya</div></div></div>
+    </div>
+    <div class="testimonial-card fade-up">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-text">"The silk dress I ordered was an absolute showstopper. I received more compliments that evening than I can count. Worth every shilling."</p>
+      <div class="testimonial-author"><div class="author-avatar">R</div><div><div class="author-name">Rehema T.</div><div class="author-location">Kisumu, Kenya</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Newsletter -->
+<div class="newsletter-section fade-up" id="contact">
+  <div class="section-tag" style="justify-content:center">Stay Connected</div>
+  <h2 class="section-title">Join the <em>Inner Circle</em></h2>
+  <p style="font-size:14px;color:var(--muted);margin-top:12px">New drops, exclusive offers, and editorial stories — straight to your inbox.</p>
+  <div class="newsletter-input-wrap">
+    <input class="newsletter-input" type="email" placeholder="Your email address">
+    <button class="newsletter-btn" onclick="showToast('Subscribed! Welcome to LUMA.')">Subscribe</button>
+  </div>
+</div>
+
+<!-- WhatsApp CTA section -->
+<div class="wa-section fade-up">
+  <div class="section-tag" style="justify-content:center">Direct Orders</div>
+  <h2 class="section-title">Order via <em>WhatsApp</em></h2>
+  <p style="font-size:14px;color:var(--muted);margin-top:12px;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.8">Prefer to order directly? Chat with Dan for personal styling advice, custom orders, and fast M-Pesa checkout — no middle man.</p>
+  <a href="https://wa.me/254700000000?text=Hello%20Dan!%20I%27m%20interested%20in%20placing%20an%20order%20from%20LUMA." class="wa-cta-btn" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    Chat with Dan on WhatsApp
+  </a>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-top">
+    <div>
+      <div class="footer-brand-name">LU<span>M</span>A</div>
+      <div class="footer-designer">Designed &amp; built by <strong>Dan Ngunjiri</strong></div>
+      <p class="footer-desc">Thoughtfully crafted fashion for those who choose quality over quantity. Based in Kenya, shipping across East Africa.</p>
+      <div class="footer-socials">
+        <!-- TikTok -->
+        <a href="https://tiktok.com/@yourhandle" class="social-link tiktok" target="_blank" rel="noopener" aria-label="TikTok">
+          <svg viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.75a4.85 4.85 0 01-1.01-.06z"/></svg>
+        </a>
+        <!-- Instagram -->
+        <a href="https://instagram.com/yourhandle" class="social-link instagram" target="_blank" rel="noopener" aria-label="Instagram">
+          <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+        </a>
+        <!-- Facebook -->
+        <a href="https://facebook.com/yourpage" class="social-link facebook" target="_blank" rel="noopener" aria-label="Facebook">
+          <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        </a>
+        <!-- WhatsApp -->
+        <a href="https://wa.me/254700000000" class="social-link whatsapp" target="_blank" rel="noopener" aria-label="WhatsApp">
+          <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Shop</div>
+      <ul class="footer-links">
+        <li><a href="#">New Arrivals</a></li>
+        <li><a href="#">Outerwear</a></li>
+        <li><a href="#">Dresses</a></li>
+        <li><a href="#">Accessories</a></li>
+        <li><a href="#">Footwear</a></li>
+        <li><a href="#">Sale</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Company</div>
+      <ul class="footer-links">
+        <li><a href="#">About Us</a></li>
+        <li><a href="#">Sustainability</a></li>
+        <li><a href="#">Press</a></li>
+        <li><a href="#">Careers</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Support</div>
+      <ul class="footer-links">
+        <li><a href="#">Shipping &amp; Returns</a></li>
+        <li><a href="#">Size Guide</a></li>
+        <li><a href="#">M-Pesa Payments</a></li>
+        <li><a href="#">FAQ</a></li>
+        <li><a href="https://wa.me/254700000000" target="_blank">Chat on WhatsApp</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-divider"></div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2025 LUMA Fashion. All rights reserved. — Designed &amp; developed by <strong>Dan Ngunjiri</strong></div>
+    <div class="footer-bottom-links">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Use</a>
+      <a href="#">Cookies</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const cursor = document.getElementById('cursor');
+  const dot = cursor.querySelector('.cursor-dot');
+  const ring = cursor.querySelector('.cursor-ring');
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;dot.style.left=mx+'px';dot.style.top=my+'px';});
+  (function anim(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(anim);})();
+  document.querySelectorAll('a,button,.product-card').forEach(el=>{
+    el.addEventListener('mouseenter',()=>cursor.classList.add('hover'));
+    el.addEventListener('mouseleave',()=>cursor.classList.remove('hover'));
+  });
+  window.addEventListener('scroll',()=>document.getElementById('navbar').classList.toggle('scrolled',scrollY>60));
+  const obs=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');}),{threshold:.1});
+  document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+  function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastText').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+  function addToCart(item){showToast(item+' added to cart ✓');}
+</script>
+</body>
+</html>
